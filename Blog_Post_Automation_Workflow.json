@@ -1,0 +1,946 @@
+{
+  "name": "Blog Post Automation Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=write blog based on doc and following cluster data\nWrite like solving a particular qustion about the product?\nwrite the content clean if subtitle and paragraph distinguish by html for wordpress.\nusing\nTitle name:\n{{ $json['Title name'] }}\n\nIntent:\n{{ $json.Intent }}\n\nKeywords:\n{{ $json.Keywords }}\n\nPrimary Keyword:\n{{ $json['Primary Keyword'] }}\n\noutput shoulbe json\n{\n  \"title\": \"\",\n  \"question:\"\",\n  \"description\": \"\",\n  \"slug\": \"\",\n  \"content\": \"\"\n}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are part of a team that creates world class blog posts. \n\nYou are the teams best copywriter and are responsible for writing out the actual blog post. \n\nFor each new blog post project you are provided with a detailed plan and research findings. \n\nYour job is to create the blog post by closely following the detailed plan. \n\nThe blog post you create must: \n\n- Use articulative paragraphs. \n\n- write like you solving single question about the app in user mind \n\n- always write the title in capital\n\n- content should have only subtitle not the have main title only subtitle, paragraph should be in to batch of sentence easy to read \n\n- use HTML for distinguish content  sub heading  and paragraph adaptable to wordpress\n\n- sub title will be H5 with paragraph.\n\n- don't reuse the title in the content, content should be explanation or informative post.\n\n- Not have any fluff. The content of the blog must be value dense and direct. \n\n- Be very detailed. \n\n- read doc in vector store and write blog \n\n- Place one keyword for each section in the heading of that section. \n\n-  When possible pepper synonyms of the keywords throughout each section. \n\n- When possible use Latent Semantic Indexing (LSI) keywords and related terms to enhance context \n\n- Title 3 to 7 words\n\n- question 5 to 10 \n\n- content  at minimum 1000 to 1500 words long. \n\n- Be suitable for a year 5 reading level. \n\nMake sure to create the entire blog post draft in your first output. \n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        980,
+        600
+      ],
+      "id": "87967ddd-7ac4-477e-9bfd-02b07191e1b6",
+      "name": "AI Agent",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/text-embedding-004"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        1100
+      ],
+      "id": "e2c27d44-78e4-4b18-9e58-a4f216911cb0",
+      "name": "Embeddings Google Gemini"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "Caption_cut_pro_doc",
+        "toolDescription": "Vector store for blog content generation",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.1,
+      "position": [
+        1020,
+        900
+      ],
+      "id": "6760e5ca-57a0-4ce4-af8a-1b65cfe4dd89",
+      "name": "Supabase Vector Store"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "18fC_vUZ81jDmJL9r6sLXwyMT_iBI77rsJcbFr68SDNY",
+          "mode": "list",
+          "cachedResultName": "cluster v1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18fC_vUZ81jDmJL9r6sLXwyMT_iBI77rsJcbFr68SDNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1657471900,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18fC_vUZ81jDmJL9r6sLXwyMT_iBI77rsJcbFr68SDNY/edit#gid=1657471900"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        480,
+        600
+      ],
+      "id": "cf9afbd6-13e5-47f0-aef3-93ddbdd8fbac",
+      "name": "Google Sheets"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all items from the Google Sheets node\nconst items = $input.all();\n\n// Check if we have any items\nif (items.length === 0) {\n  return [];\n}\n\n// Generate a random index\nconst randomIndex = Math.floor(Math.random() * items.length);\n\n// Select the random item and add index information\nconst randomItem = {\n  ...items[randomIndex].json,\n  selectedIndex: randomIndex + 1, // Adding 1 to make it human-readable (row 1, 2, 3...)\n  totalRows: items.length,\n  selectionTimestamp: new Date().toISOString()\n};\n\n// Return the randomly selected item\nreturn [{ json: randomItem }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        600
+      ],
+      "id": "b2ff8b7d-7408-416a-9ac2-f5519d6ac165",
+      "name": "Random Row Selector"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"....\",\n  \"question\":\"...\",\n  \"description\": \"....\",\n  \"slug\": \".....\",\n  \"content\": \"......\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1340,
+        820
+      ],
+      "id": "31aea679-61b1-4be3-8c80-78962536ec06",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7fdafe64-4f8d-4e34-bff6-72c6a3feafb8",
+              "name": "Title",
+              "value": "={{ $json.output.title }}",
+              "type": "string"
+            },
+            {
+              "id": "fc03f541-562b-430b-b248-c8901e3d5ffa",
+              "name": "Question",
+              "value": "={{ $json.output.question }}",
+              "type": "string"
+            },
+            {
+              "id": "d34dc808-488e-4832-8bcc-909b972e4bc2",
+              "name": "Description",
+              "value": "={{ $json.output.description }}",
+              "type": "string"
+            },
+            {
+              "id": "46540c89-4406-4197-95ee-b077d55bbd33",
+              "name": "slug",
+              "value": "={{ $json.output.slug }}",
+              "type": "string"
+            },
+            {
+              "id": "f3c3429b-40b8-4c47-9823-baded12ffbd8",
+              "name": "content",
+              "value": "={{ $json.output.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1420,
+        600
+      ],
+      "id": "d4327e5e-41c0-4238-b606-cf702fd43f51",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        800,
+        880
+      ],
+      "id": "e18826e3-fc13-410d-8a1b-7c9912b28880",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "text": "={{ $('Edit Fields').item.json.Question }}",
+        "fontSize": 40,
+        "fontColor": "#FFFCF3",
+        "positionX": 600,
+        "positionY": 600,
+        "lineLength": 30,
+        "options": {
+          "font": "/usr/share/fonts/truetype/msttcorefonts/Arial_Bold.ttf"
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        3040,
+        400
+      ],
+      "id": "bbf2b9c5-25dd-4326-8f13-c3ccdd50ab46",
+      "name": "Edit Image"
+    },
+    {
+      "parameters": {
+        "operation": "blur",
+        "blur": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        3260,
+        400
+      ],
+      "id": "858d7a24-eb64-4953-97c1-4f56030723ba",
+      "name": "Edit Image1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.blog.captioncut.com/wp-json/wp/v2/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Disposition",
+              "value": "=attachment; filename=\"{{ $('Edit Fields').item.json.Title }}.png\""
+            },
+            {
+              "name": "Content-Type",
+              "value": "image/png"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4020,
+        540
+      ],
+      "id": "49e58e23-eb20-4314-a8c4-d707cb268260",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/imagen4/preview/fast",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Key < api key >"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=A vibrant, blurred background with a rich, colorful gradient of deep, saturated colors. The colors should be bold and seamlessly blend into one another, creating a smooth, abstract texture. Avoid using white or very light pastel shades."
+            },
+            {
+              "name": "aspect_ratio",
+              "value": "=16:9"
+            },
+            {
+              "name": "num_images",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1640,
+        600
+      ],
+      "id": "0a8f0d8d-483c-4385-8f83-47287250b80b",
+      "name": "Submit Lipsync Request"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.images[0].url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2820,
+        400
+      ],
+      "id": "1d8ab42c-82c5-43d0-b97a-b97ce92cc495",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.response_url }}",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "Key 75dc4119-bf62-404b-92ce-a1d9e3c7011b:f64d83d6c48204a1404a36c0d3c22dca"
+            }
+          ]
+        }
+      },
+      "name": "Download Video1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        2540,
+        560
+      ],
+      "id": "189a32b0-6426-4efc-ad52-76bbaa258630"
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "name": "Wait 10s1",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        840
+      ],
+      "id": "5137390a-9305-412c-8403-b5e62f7d6f81",
+      "webhookId": "bb65fe38-3599-4ed9-ae81-95f6fa454a32"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Check Status1\"].json[\"status\"]}}",
+              "value2": "COMPLETED"
+            }
+          ]
+        }
+      },
+      "name": "IF Completed?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        600
+      ],
+      "id": "a587d3df-169e-4a49-b713-d65c60e71eab"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.status_url }}",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "Key 75dc4119-bf62-404b-92ce-a1d9e3c7011b:f64d83d6c48204a1404a36c0d3c22dca"
+            }
+          ]
+        }
+      },
+      "name": "Check Status1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1960,
+        600
+      ],
+      "id": "244c2e4f-401c-4ed3-bb3c-41bfaa188f1f"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.blog.captioncut.com/wp-json/wp/v2/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "={{ $('Edit Fields').item.json.Title }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ $('Edit Fields').item.json.content }}"
+            },
+            {
+              "name": "status",
+              "value": "publish"
+            },
+            {
+              "name": "featured_media",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4280,
+        540
+      ],
+      "id": "56892b04-7638-4d25-a90e-89571aa6bc3b",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "driveId": {
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1k1w9y1_Wn8VbMAiyYP9er2l1xiR6Lp2i",
+            "mode": "list",
+            "cachedResultName": "png_thubnail",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1k1w9y1_Wn8VbMAiyYP9er2l1xiR6Lp2i"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2840,
+        780
+      ],
+      "id": "d9a649b4-8b2c-418e-91ac-21471c254176",
+      "name": "Google Drive6"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "overlay"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3140,
+        780
+      ],
+      "id": "380ef827-3422-46ce-ac6e-47b01f6c5af6",
+      "name": "Google Drive7"
+    },
+    {
+      "parameters": {
+        "operation": "composite",
+        "dataPropertyName": "=data",
+        "dataPropertyNameComposite": "=overlay",
+        "positionX": 300,
+        "positionY": 200,
+        "options": {
+          "fileName": ""
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        3760,
+        540
+      ],
+      "id": "4cc9e275-ab9c-44e0-bda4-67bbbbdb7589",
+      "name": "Edit Image7"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all items from the Google Drive folder list\nconst items = $input.all();\n\n// Check if we have any items\nif (items.length === 0) {\n  return [];\n}\n\n// Generate a random index\nconst randomIndex = Math.floor(Math.random() * items.length);\n\n// Select the random item and preserve the original structure\nconst selectedItem = items[randomIndex];\n\n// Return ONLY the selected item to maintain clean data flow\nreturn [selectedItem];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3000,
+        780
+      ],
+      "id": "885e95b9-5af4-4429-81f7-76043cf98677",
+      "name": "Random Row Selector1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3500,
+        580
+      ],
+      "id": "890dd871-5f33-4d68-b38d-b0390eb0a4af",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "dataPropertyName": "overlay",
+        "width": 400,
+        "height": 400,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        3280,
+        780
+      ],
+      "id": "ebbb941a-2c1f-425d-9508-19ff8d8a9624",
+      "name": "Edit Image3"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1tN2uOXqc-elUNDnbSXImkTCQr_O3iP1pX5XMROhtivE",
+          "mode": "list",
+          "cachedResultName": "Caption Cut Blog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tN2uOXqc-elUNDnbSXImkTCQr_O3iP1pX5XMROhtivE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Blog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tN2uOXqc-elUNDnbSXImkTCQr_O3iP1pX5XMROhtivE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title": "={{ $('Edit Fields').item.json.Title }}",
+            "Description": "={{ $('Edit Fields').item.json.Description }}",
+            "Slug": "={{ $('Edit Fields').item.json.slug }}",
+            "Image": "={{ $('HTTP Request').item.json.guid.raw }}",
+            "URL": "={{ $json.guid.rendered }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Slug",
+              "displayName": "Slug",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image",
+              "displayName": "Image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        4540,
+        540
+      ],
+      "id": "8c01d283-c005-4032-9d03-e15c07c3d64e",
+      "name": "Google Sheets1"
+    },
+    {
+      "parameters": {
+        "content": "\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/sticky-notes/)",
+        "height": 1380,
+        "width": 4860,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b31cb5e9-a16a-415a-87c0-1d09af9249df",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "path": "d4af8925-217f-4f32-b59a-7fcaa243a120",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        280,
+        600
+      ],
+      "id": "7c762afd-c3ef-4067-86b5-cddf6e94ce65",
+      "name": "Webhook",
+      "webhookId": "d4af8925-217f-4f32-b59a-7fcaa243a120"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Random Row Selector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Random Row Selector": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Submit Lipsync Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image": {
+      "main": [
+        [
+          {
+            "node": "Edit Image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit Lipsync Request": {
+      "main": [
+        [
+          {
+            "node": "Check Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Edit Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Drive6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10s1": {
+      "main": [
+        [
+          {
+            "node": "Check Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Completed?1": {
+      "main": [
+        [
+          {
+            "node": "Download Video1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 10s1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status1": {
+      "main": [
+        [
+          {
+            "node": "IF Completed?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive6": {
+      "main": [
+        [
+          {
+            "node": "Random Row Selector1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive7": {
+      "main": [
+        [
+          {
+            "node": "Edit Image3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Random Row Selector1": {
+      "main": [
+        [
+          {
+            "node": "Google Drive7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Edit Image7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image7": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image3": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fdc91c1d-b206-448f-8014-0762d5a50378",
+  "meta": {
+    "instanceId": "8ce7f4a583d9b5056cbb17c48e1cf5e62ab21ae47a58a364189ccdf5015f6a78"
+  },
+  "id": "b4ENOFEa20Bdwevt",
+  "tags": []
+}
