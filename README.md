@@ -3,7 +3,7 @@
 A complete n8n workflow to automate end-to-end blog publishing—from prompt selection and semantic retrieval to AI-driven writing, image generation, and WordPress publishing.
 
 <p align="center">
-  <img src="https://primary-production-2548.up.railway.app/wp-content/uploads/2025/07/n8n-blog.png" alt="dwdw" width="600"/>
+  <img src="https://primary-production-2548.up.railway.app/wp-content/uploads/2025/07/n8n-blog.png" alt="Blog Post Automation Workflow" width="600"/>
 </p>
 ---
 
